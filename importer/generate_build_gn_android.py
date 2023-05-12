@@ -11,20 +11,18 @@ def process_assets():
     icon_assets_path = os.path.join(android_directory, LIBRARY_NAME, "src", "main", "res", "drawable")
     color_assets_path = os.path.join(android_directory, LIBRARY_NAME, "src", "main", "res", "color")
 
-    #icons
-    icon_file_names = []
-    for file_name in os.listdir(icon_assets_path):
-        if not file_name.endswith('.xml'):
-            continue
-        icon_file_names.append(file_name)
+    icon_file_names = [
+        file_name
+        for file_name in os.listdir(icon_assets_path)
+        if file_name.endswith('.xml')
+    ]
     icon_file_names.sort()
 
-    #colors
-    color_file_names = []
-    for file_name in os.listdir(color_assets_path):
-        if not file_name.endswith('.xml'):
-            continue
-        color_file_names.append(file_name)
+    color_file_names = [
+        file_name
+        for file_name in os.listdir(color_assets_path)
+        if file_name.endswith('.xml')
+    ]
     color_file_names.sort()
 
 
@@ -48,7 +46,7 @@ def process_assets():
         for file_name in icon_file_names:
             file_path = "    \"../android/library/src/main/res/drawable/" + file_name + "\",\n"
             gn_file.write(file_path)
-        
+
         for file_name in color_file_names:
             file_path = "    \"../android/library/src/main/res/color/" + file_name + "\",\n"
             gn_file.write(file_path)

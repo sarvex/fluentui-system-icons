@@ -78,17 +78,22 @@ def add_localized_set(lang_locs, original_icon_names, icon_assets_path):
                 continue
             elif len(locale_components) == 2:
                 if len(locale_components[1]) == 2:
-                    asset_locale = locale_components[0] + "-" + locale_components[1].upper()
+                    asset_locale = f"{locale_components[0]}-{locale_components[1].upper()}"
                 else:
-                    asset_locale = locale_components[0] + "-" + locale_components[1].title()
+                    asset_locale = f"{locale_components[0]}-{locale_components[1].title()}"
             else:
                 asset_locale = lang_loc
 
-            shutil.copyfile(os.path.join("dist", lang_loc, file_name), os.path.join(imageset_path, lang_loc + "_" + file_name))
+            shutil.copyfile(
+                os.path.join("dist", lang_loc, file_name),
+                os.path.join(imageset_path, f"{lang_loc}_{file_name}"),
+            )
             imageset_contents_path = os.path.join(imageset_path, "Contents.json")
             contents_json = json.load(open(imageset_contents_path))
 
-            loc_image_data = xc_image_data_for_file_name(lang_loc + "_" + file_name, locale=lang_loc)
+            loc_image_data = xc_image_data_for_file_name(
+                f"{lang_loc}_{file_name}", locale=lang_loc
+            )
 
             contents_json["properties"]["localizable"] = True
             contents_json["images"].append(loc_image_data)
@@ -111,10 +116,11 @@ def create_icon_set(file_names, original_icon_names, icon_assets_path):
         elif "_rtl_" in file_name:
             sibling_file_name = file_name.replace("_rtl_", "_ltr_")
 
-        if sibling_file_name is not None:
-            if not os.path.exists(os.path.join("dist", sibling_file_name)):
-                print(f"WARNING: No corresponding localized icon {sibling_file_name}")
-                sibling_file_name = None
+        if sibling_file_name is not None and not os.path.exists(
+            os.path.join("dist", sibling_file_name)
+        ):
+            print(f"WARNING: No corresponding localized icon {sibling_file_name}")
+            sibling_file_name = None
 
         imageset_path = os.path.join(icon_assets_path, "{icon_name}.imageset".format(icon_name=icon_name))
         os.mkdir(imageset_path)
@@ -163,7 +169,9 @@ def process_assets():
 
     ios_directory = os.path.join(project_root, "ios")
 
-    icon_assets_path = os.path.join(ios_directory, LIBRARY_NAME + "s", "Assets", "IconAssets.xcassets")
+    icon_assets_path = os.path.join(
+        ios_directory, f"{LIBRARY_NAME}s", "Assets", "IconAssets.xcassets"
+    )
     if os.path.exists(icon_assets_path):
         shutil.rmtree(icon_assets_path)
     os.mkdir(icon_assets_path)
@@ -190,17 +198,22 @@ def process_assets():
 
         for file_name in file_names:
             imageset_name = get_icon_name(file_name)
-            imageset_folder_path = ios_directory + '/FluentIcons/Assets/IconAssets.xcassets/' + imageset_name + '.imageset'
+            imageset_folder_path = f'{ios_directory}/FluentIcons/Assets/IconAssets.xcassets/{imageset_name}.imageset'
 
-            gn_file.write("imageset(\"{}\")".format(imageset_name) + " {\n")
+            gn_file.write(f'imageset(\"{imageset_name}\")' + " {\n")
             gn_file.write("  sources = [\n")
-            gn_file.write("    \"FluentIcons/Assets/IconAssets.xcassets/{}.imageset/Contents.json\"".format(imageset_name) + ",\n")
+            gn_file.write(
+                f'    \"FluentIcons/Assets/IconAssets.xcassets/{imageset_name}.imageset/Contents.json\"'
+                + ",\n"
+            )
             for imageset_file in os.listdir(imageset_folder_path):
                 if os.path.splitext(imageset_file)[1] == IMAGE_FORMAT:
                     gn_file.write("    \"FluentIcons/Assets/IconAssets.xcassets/{imageset_name}.imageset/{icon_file_name}\"".format(imageset_name=imageset_name, icon_file_name=imageset_file) + ",\n")
             gn_file.write("  ]\n")
             gn_file.write("}\n\n")
-    swift_enum_path = os.path.join(ios_directory, LIBRARY_NAME + "s", "Classes", LIBRARY_NAME + ".swift")
+    swift_enum_path = os.path.join(
+        ios_directory, f"{LIBRARY_NAME}s", "Classes", f"{LIBRARY_NAME}.swift"
+    )
     if os.path.exists(swift_enum_path):
         os.remove(swift_enum_path)
 
@@ -233,16 +246,13 @@ def process_assets():
     all_weights = set()
     icon_weight_combinations = set()
     for icon_name, icon_weights in sorted(icons.items()):
-        icon_weights = list(set(icon_weights))  # Dedupe
-        icon_weights.sort()
+        icon_weights = sorted(set(icon_weights))
         icon_weight_combinations.add(' '.join(icon_weights))
 
         for icon_weight in icon_weights:
-            all_weights.add("\"{}\"".format(icon_weight))
+            all_weights.add(f'\"{icon_weight}\"')
 
-    icon_weight_combinations = list(icon_weight_combinations)
-    icon_weight_combinations.sort()
-
+    icon_weight_combinations = sorted(icon_weight_combinations)
     with open(swift_enum_path, 'w+') as swift_enum_file:
         swift_enum_file.write("//\n")
         swift_enum_file.write("//  Copyright (c) Microsoft Corporation.\n")
@@ -254,15 +264,16 @@ def process_assets():
 
         swift_enum_file.write("import Foundation\n\n")
 
-        sorted_weights = list(all_weights)
-        sorted_weights.sort()
-
+        sorted_weights = sorted(all_weights)
         swift_enum_file.write("/// Fluent Icons\n")
         swift_enum_file.write("///\n")
         swift_enum_file.write("/// View the full list of icons here:\n")
         swift_enum_file.write("/// https://github.com/microsoft/fluentui-system-icons/blob/master/icons.md\n")
         swift_enum_file.write("///\n")
-        swift_enum_file.write("@objc public enum {}: Int, Equatable, CaseIterable".format(LIBRARY_NAME) + " {\n")
+        swift_enum_file.write(
+            f"@objc public enum {LIBRARY_NAME}: Int, Equatable, CaseIterable"
+            + " {\n"
+        )
 
         cases_output = []
         resource_strings = []
@@ -270,9 +281,7 @@ def process_assets():
         all_icons_by_name = defaultdict(list)
         first_icon = True
         for icon_name, icon_weights in sorted(icons.items()):
-            icon_weights = list(set(icon_weights))  # Dedupe
-            icon_weights.sort()
-
+            icon_weights = sorted(set(icon_weights))
             icon_name_components = icon_name.split('_')[:-1]
 
             for icon_weight in icon_weights:
